@@ -1,2 +1,4 @@
 pyspark
 tensorflow
+pandas
+scikit-learn
