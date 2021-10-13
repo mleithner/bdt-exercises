@@ -32,17 +32,26 @@ if __name__ == "__main__":
     record_count = df.count()
     print(f'We have {record_count} records')
 
+    # Rename GEBURTSJAHR_HUND to GJ
+
     df = df.withColumnRenamed('GEBURTSJAHR_HUND', 'GJ')
     end = time.perf_counter()
     print(f'3. Column GEBURTSJAHR_HUND renamed to GJ in {end-start}s')
     start = end
 
+    # Add synthetic ANZAHL column
+
+    # .when(condition, result-if-true)
+    # .otherwise(result-if-false) # otherwise None
+    # You must use & instead of 'and', | instead of 'or' and ~ instead of 'not'
     df = df.withColumn('ANZAHL', when(df.RASSE1.isNull() & df.RASSE2.isNull(), 0)
                                 .when(df.RASSE1.isNull() | df.RASSE2.isNull(), 1)
                                 .otherwise(2))
     end = time.perf_counter()
     print(f'4. Added synthetic ANZAHL column in {end-start}s')
     start = end
+
+    # Collect the result
 
     print('========\n*** Transformed dataset')
     df.show(n=5)
@@ -55,6 +64,7 @@ if __name__ == "__main__":
     print(f'5. Collected result in {end-start}s')
     start = end
 
+    # Count ratio of labrador retrievers and chihuahuas
 
     labrador_retriever_count = df.filter((df.RASSE1 == 'Labrador Retriever') | (df.RASSE2 == 'Labrador Retriever')).count()
     print(f'Labrador retrievers: {labrador_retriever_count}/{record_count} = {100*labrador_retriever_count/record_count}%')
@@ -62,5 +72,5 @@ if __name__ == "__main__":
     chihuahua_count = df.filter((df.RASSE1 == 'Chihuahua') | (df.RASSE2 == 'Chihuahua')).count()
     print(f'Chihuahuas: {chihuahua_count}/{record_count} = {100*chihuahua_count/record_count}%')
 
-
+    # Shut down the Spark session
     spark.stop()
