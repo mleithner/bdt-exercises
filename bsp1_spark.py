@@ -3,11 +3,11 @@ import time
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import expr, when
 
-# Lazy evaluation in Spark
+# Small Spark exercise
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: spark.py <input.csv>", file=sys.stderr)
+        print("Usage: bsp1_spark.py <input.csv>", file=sys.stderr)
         sys.exit(-1)
 
     start = time.perf_counter()
