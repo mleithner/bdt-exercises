@@ -27,7 +27,7 @@ if __name__ == "__main__":
     start = end
 
     print('========\n*** Initial dataset')
-    df.show(n=5)
+    df.show(n=20)
     df.printSchema()
     record_count = df.count()
     print(f'We have {record_count} records')
@@ -41,12 +41,18 @@ if __name__ == "__main__":
 
     # Add synthetic ANZAHL column
 
-    # .when(condition, result-if-true)
-    # .otherwise(result-if-false) # otherwise None
-    # You must use & instead of 'and', | instead of 'or' and ~ instead of 'not'
-    df = df.withColumn('ANZAHL', when(df.RASSE1.isNull() & df.RASSE2.isNull(), 0)
-                                .when(df.RASSE1.isNull() | df.RASSE2.isNull(), 1)
-                                .otherwise(2))
+    # There are tons of ways to do this, we could reuse the tuplify/reduceByKey
+    # approach from class, but this is marginally more elegant.
+
+    # Create a dataframe with two columns: HALTER_ID and ANZAHL
+    group_df = (df
+            .groupBy('HALTER_ID')
+            .count()
+            .withColumnRenamed('count', 'ANZAHL')
+            )
+    # Join it on the original dataframe
+    df = df.join(group_df, 'HALTER_ID')
+
     end = time.perf_counter()
     print(f'4. Added synthetic ANZAHL column in {end-start}s')
     start = end
@@ -54,10 +60,11 @@ if __name__ == "__main__":
     # Collect the result
 
     print('========\n*** Transformed dataset')
-    df.show(n=5)
+    df.show(n=20)
     df.printSchema()
-    # Sanity check via column statistics - there should be a mean > 1
-    #df.select('ANZAHL').summary().show()
+
+    print('Sanity check via ANZAHL column statistics - mean should be >= 1')
+    df.select('ANZAHL').summary().show()
 
     result = df.collect()
     end = time.perf_counter()
@@ -66,10 +73,16 @@ if __name__ == "__main__":
 
     # Count ratio of labrador retrievers and chihuahuas
 
-    labrador_retriever_count = df.filter((df.RASSE1 == 'Labrador Retriever') | (df.RASSE2 == 'Labrador Retriever')).count()
+    labrador_retriever_count = df.filter(
+            ((df.RASSE1 == 'Labrador Retriever') & df.RASSE1_MISCHLING.isNull() & df.RASSE2.isNull()) |\
+                    ((df.RASSE2 == 'Labrador Retriever') & df.RASSE2_MISCHLING.isNull() & df.RASSE1.isNull())
+            ).count()
     print(f'Labrador retrievers: {labrador_retriever_count}/{record_count} = {100*labrador_retriever_count/record_count}%')
 
-    chihuahua_count = df.filter((df.RASSE1 == 'Chihuahua') | (df.RASSE2 == 'Chihuahua')).count()
+    chihuahua_count = df.filter(
+            ((df.RASSE1 == 'Chihuahua') & df.RASSE1_MISCHLING.isNull() & df.RASSE2.isNull()) |\
+                    ((df.RASSE2 == 'Chihuahua') & df.RASSE2_MISCHLING.isNull() & df.RASSE1.isNull())
+            ).count()
     print(f'Chihuahuas: {chihuahua_count}/{record_count} = {100*chihuahua_count/record_count}%')
 
     # Shut down the Spark session
