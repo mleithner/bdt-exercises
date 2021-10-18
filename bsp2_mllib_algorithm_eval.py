@@ -3,9 +3,11 @@ import time
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import expr, when
 from pyspark.ml.feature import VectorAssembler
-from pyspark.ml.linalg import DenseVector
 #from pyspark.ml.regression import DecisionTreeRegressor
-from pyspark.ml.regression import LinearRegression
+# https://spark.apache.org/docs/latest/api/python/reference/pyspark.ml.html#regression
+from pyspark.ml.regression import DecisionTreeRegressor,\
+        GBTRegressor, GeneralizedLinearRegression, IsotonicRegression,\
+        LinearRegression, RandomForestRegressor
 from pyspark.ml.evaluation import RegressionEvaluator
 
 # Small MLlib exercise
@@ -46,7 +48,7 @@ if __name__ == "__main__":
 
     vector_assembler = VectorAssembler(inputCols = [
         'calories', 'protein', 'fat', 'sodium', 'fiber', 'carbo', 'sugars',
-        'potass', 'vitamins', 'weight', 'cups'
+        'potass', 'vitamins', 'shelf', 'weight', 'cups'
         ], outputCol = 'features')
 
     transformed_df = (vector_assembler
@@ -64,42 +66,30 @@ if __name__ == "__main__":
     print(f'Test set: {test_df.count()} entries')
 
     # 4. Fit a linear regression model on the data
+    for cls in DecisionTreeRegressor,\
+        GBTRegressor, GeneralizedLinearRegression, IsotonicRegression,\
+        LinearRegression, RandomForestRegressor:
 
-    lr = LinearRegression(featuresCol = 'features', labelCol='rating',
-            # See evaluation script for why these were selected
-            maxIter=1, loss = 'squaredError',
-            regParam = 0.0, elasticNetParam = 0.0)
+        print(f'Regressor: {cls.__name__}')
 
-    lr_model = lr.fit(training_df)
-    print(f'RMSE on training set: {lr_model.summary.rootMeanSquaredError}')
-    print(f'r2 on training set: {lr_model.summary.r2}')
+        regr = cls(featuresCol = 'features', labelCol='rating')
 
-    # 5. Predict rating values in test set (and evaluate the prediction)
+        regr_model = regr.fit(training_df)
 
-    lr_predictions = lr_model.transform(test_df)
+        # 5. Predict rating values in test set (and evaluate the prediction)
 
-    test_result = lr_model.evaluate(test_df)
-    print(f'RMSE on test set: {test_result.rootMeanSquaredError}')
+        regr_predictions = regr_model.transform(test_df)
 
-    lr_evaluator = RegressionEvaluator(predictionCol="prediction", \
+        regr_evaluator = RegressionEvaluator(predictionCol="prediction", \
+                             labelCol="rating",metricName="rmse")
+
+        print(f'RMSE on test set: {regr_evaluator.evaluate(regr_predictions)}')
+
+        regr_evaluator = RegressionEvaluator(predictionCol="prediction", \
                              labelCol="rating",metricName="r2")
-    print(f'r2 on test set: {lr_evaluator.evaluate(lr_predictions)}')
+        print(f'r2 on test set: {regr_evaluator.evaluate(regr_predictions)}')
 
-    lr_predictions.select("prediction","rating","features").show(n=100)
-
-    # Let's try it with an artificial cereal...
-    print(lr_model)
-    print(lr_model.coefficients)
-
-    # Literally an 8 oz steak.
-    #
-    # 'calories', 'protein', 'fat', 'sodium', 'fiber', 'carbo', 'sugars',
-    # 'potass', 'vitamins', 'weight', 'cups'
-    a_steak = DenseVector([568.0, 62.16, 33.68, 840, 0.0, 0.0, 0.0, 688.0, 0.0, 1.0, 1.0])
-    print(f'Feature vector for 8oz steak: {a_steak}')
-    steak_prediction = lr_model.predict(a_steak)
-    print(f'Predicted rating for an 8oz steak: {steak_prediction}')
-    print('...this is obviously wrong. Breakfast steak is always 100/100.')
+        regr_predictions.select("prediction","rating","features").show(n=100)
 
     # Shut down the Spark session
     spark.stop()
