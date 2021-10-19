@@ -30,7 +30,7 @@ def predict(model, row, actual, input_encoder_rasse, input_encoder_rasse2, input
     print(f'Predicted class: {output_encoder.inverse_transform(np.array([[predicted_class]]))[0][0]} ({predicted_class})')
     print(f'Actual class: {(output_encoder.inverse_transform(np.array([actual])))[0][0]} ({actual[0]})')
     loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
-    print(loss_fn([actual], prediction).numpy())
+    print(f'Loss: {loss_fn([actual], prediction).numpy()}')
 
 
 if __name__ == "__main__":
