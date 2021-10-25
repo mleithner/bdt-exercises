@@ -97,7 +97,7 @@ if __name__ == "__main__":
     model = tf.keras.Sequential([
             tf.keras.layers.Dense(10, activation='relu', kernel_initializer='he_normal', input_shape=(n_features,)),
             tf.keras.layers.Dense(8, activation='relu', kernel_initializer='he_normal'),
-            tf.keras.layers.Dense(n_classes, activation='sigmoid')
+            tf.keras.layers.Dense(n_classes, activation='softmax')
             ])
 
     #model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
@@ -117,13 +117,13 @@ if __name__ == "__main__":
 
     # 5. Fit the model
     banner('Fitting the model, this will take a while...')
-    model.fit(X_train, y_train, epochs=1000, batch_size=1024, verbose=0)
+    model.fit(X_train, y_train, epochs=1000, batch_size=1024, verbose=1)
     end = time.perf_counter()
     banner(f'5. Fit the model in {end-start}s, evaluating...')
     start = end
 
     # 6. Evaluate the model
-    loss, mse, accuracy = model.evaluate(X_test, y_test, verbose=0)
+    loss, mse, accuracy = model.evaluate(X_test, y_test, verbose=1)
     print(f'Test MSE: {mse} Accuracy: {accuracy}')
     end = time.perf_counter()
     banner(f'6. Evaluated test accuracy in {end-start}s, making prediction...')

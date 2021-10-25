@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     # 1. Get session
 
-    spark = SparkSession.builder.master('local').appName('Bsp2 MLlib').getOrCreate()
+    spark = SparkSession.builder.master('local').appName('Bsp2 MLlib Algorithm Evaluation').getOrCreate()
     end = time.perf_counter()
     print(f'1. Created a Spark session in {end-start}s')
     start = end

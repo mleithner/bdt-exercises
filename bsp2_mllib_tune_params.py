@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     # 1. Get session
 
-    spark = SparkSession.builder.master('local').appName('Bsp2 MLlib').getOrCreate()
+    spark = SparkSession.builder.master('local').appName('Bsp2 MLlib Linear Regression Parameter Tuning').getOrCreate()
     end = time.perf_counter()
     print(f'1. Created a Spark session in {end-start}s')
     start = end
@@ -100,18 +100,16 @@ if __name__ == "__main__":
         test_result = lr_model.evaluate(test_df)
         print(f'RMSE on test set: {test_result.rootMeanSquaredError}')
 
-        # This is highly questionable, it over-weights the test set error
-        rmse_sum = lr_model.summary.rootMeanSquaredError + \
-                test_result.rootMeanSquaredError
+        rmse_test = test_result.rootMeanSquaredError
 
-        if rmse_sum < rmse_min:
+        if rmse_test < rmse_min:
             best_config = [iterations, loss, regParam, elasticNetParam]
-            rmse_min = rmse_sum
+            rmse_min = rmse_test
 
     # Shut down the Spark session
     spark.stop()
 
-    print(f'Best configuration (RMSE ~ {rmse_min/2}):')
+    print(f'Best configuration (RMSE ~ {rmse_min}):')
     maxIter, loss, regParam, elasticNetParam = best_config
     print(f'maxIter = {maxIter}')
     print(f'loss = {loss}')
